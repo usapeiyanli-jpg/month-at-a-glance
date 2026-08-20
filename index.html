@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Month at a Glance</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Fast monthly planning</p>
+        <h1>Month at a Glance</h1>
+      </div>
+      <div class="month-controls" aria-label="Calendar month controls">
+        <button id="prevMonth" type="button" aria-label="Previous month">‹</button>
+        <h2 id="monthLabel" aria-live="polite"></h2>
+        <button id="nextMonth" type="button" aria-label="Next month">›</button>
+      </div>
+    </header>
+
+    <section class="planner-layout">
+      <form id="eventForm" class="quick-add" autocomplete="off">
+        <h2>Add something</h2>
+        <label>
+          Title
+          <input id="titleInput" type="text" name="title" maxlength="42" placeholder="Homework, practice, test..." required>
+        </label>
+        <label>
+          Description
+          <textarea id="descriptionInput" name="description" maxlength="90" rows="3" placeholder="Room number, what to bring, quick note..."></textarea>
+        </label>
+        <div class="form-row">
+          <label>
+            Date
+            <input id="dateInput" type="date" name="date" required>
+          </label>
+          <label>
+            Time
+            <input id="timeInput" type="time" name="time" required>
+          </label>
+        </div>
+        <button class="primary-action" type="submit">Add to calendar</button>
+        <button id="shareButton" class="secondary-action" type="button">Share calendar</button>
+        <label class="share-output">
+          Share URL
+          <input id="shareUrl" type="url" readonly placeholder="Add something, then share it">
+        </label>
+        <p id="shareStatus" class="share-status" aria-live="polite"></p>
+      </form>
+
+      <section class="calendar-panel" aria-label="Monthly calendar">
+        <div class="weekday-grid" aria-hidden="true">
+          <span>Sun</span>
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
