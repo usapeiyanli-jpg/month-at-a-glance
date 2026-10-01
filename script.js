@@ -8,6 +8,9 @@ const timeInput = document.querySelector("#timeInput");
 const prevMonthButton = document.querySelector("#prevMonth");
 const nextMonthButton = document.querySelector("#nextMonth");
 const shareButton = document.querySelector("#shareButton");
+const shareOptions = document.querySelector("#shareOptions");
+const shareOptionsList = document.querySelector("#shareOptionsList");
+const createShareButton = document.querySelector("#createShareButton");
 const shareUrlInput = document.querySelector("#shareUrl");
 const shareStatus = document.querySelector("#shareStatus");
 
@@ -38,12 +41,15 @@ eventForm.addEventListener("submit", (event) => {
     title,
     description,
     date,
-    time
+    time,
+    share: true,
+    redact: false
   });
 
   viewedDate = fromDateInputValue(date);
   saveEvents();
   renderCalendar();
+  if (!shareOptions.hidden) renderShareOptions();
   eventForm.reset();
   dateInput.value = date;
   timeInput.value = time;
@@ -60,7 +66,16 @@ nextMonthButton.addEventListener("click", () => {
   renderCalendar();
 });
 
-shareButton.addEventListener("click", async () => {
+shareButton.addEventListener("click", () => {
+  shareOptions.hidden = !shareOptions.hidden;
+  shareButton.textContent = shareOptions.hidden ? "Choose what to share" : "Hide sharing options";
+
+  if (!shareOptions.hidden) {
+    renderShareOptions();
+  }
+});
+
+createShareButton.addEventListener("click", async () => {
   const shareUrl = createShareUrl();
 
   shareUrlInput.value = shareUrl;
@@ -74,6 +89,17 @@ shareButton.addEventListener("click", async () => {
   }
 });
 
+shareOptionsList.addEventListener("change", (event) => {
+  const control = event.target.closest("input[data-event-id]");
+  if (!control) return;
+
+  const item = events.find((calendarEvent) => calendarEvent.id === control.dataset.eventId);
+  if (!item) return;
+
+  item[control.dataset.setting] = control.checked;
+  saveEvents();
+});
+
 calendarGrid.addEventListener("click", (event) => {
   const removeButton = event.target.closest(".remove-event");
   const descriptionButton = event.target.closest(".description-toggle");
@@ -83,6 +109,7 @@ calendarGrid.addEventListener("click", (event) => {
     events = events.filter((item) => item.id !== removeButton.dataset.id);
     saveEvents();
     renderCalendar();
+    if (!shareOptions.hidden) renderShareOptions();
     return;
   }
 
@@ -228,7 +255,7 @@ function createEventItem(item) {
 function loadEvents() {
   try {
     const savedEvents = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
-    return JSON.parse(savedEvents) || [];
+    return (JSON.parse(savedEvents) || []).map(normalizeLocalEvent).filter(Boolean);
   } catch {
     return [];
   }
@@ -282,6 +309,19 @@ function saveEventsToStorage(items) {
   localStorage.setItem(storageKey, JSON.stringify(items));
 }
 
+function normalizeLocalEvent(item) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  return {
+    ...item,
+    id: typeof item.id === "string" ? item.id : createEventId(),
+    share: item.share !== false,
+    redact: item.redact === true
+  };
+}
+
 function normalizeSharedEvent(item) {
   if (!item || typeof item !== "object") {
     return null;
@@ -301,22 +341,66 @@ function normalizeSharedEvent(item) {
     title,
     description,
     date,
-    time
+    time,
+    share: true,
+    redact: false
   };
 }
 
 function createShareUrl() {
   const url = new URL(getShareBaseUrl());
-  const sharedEvents = events.map(({ title, description, date, time }) => ({
-    title,
-    description,
-    date,
-    time
-  }));
+  const sharedEvents = events
+    .filter((item) => item.share !== false)
+    .map((item) => ({
+      title: item.redact ? "Busy" : item.title,
+      description: item.redact ? "" : item.description,
+      date: item.date,
+      time: item.time
+    }));
 
   url.searchParams.set("events", encodeURIComponent(JSON.stringify(sharedEvents)));
   url.searchParams.set("month", `${viewedDate.getFullYear()}-${String(viewedDate.getMonth() + 1).padStart(2, "0")}`);
   return url.toString();
+}
+
+function renderShareOptions() {
+  shareOptionsList.innerHTML = "";
+
+  if (events.length === 0) {
+    shareOptionsList.textContent = "Add an event before creating a share link.";
+    createShareButton.disabled = true;
+    return;
+  }
+
+  createShareButton.disabled = false;
+  events
+    .slice()
+    .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))
+    .forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "share-option";
+
+      const label = document.createElement("strong");
+      label.textContent = `${item.date} · ${item.title}`;
+      row.appendChild(label);
+      row.appendChild(createShareCheckbox(item, "share", "Include in link", item.share !== false));
+      row.appendChild(createShareCheckbox(item, "redact", "Share as Busy", item.redact === true));
+      shareOptionsList.appendChild(row);
+    });
+}
+
+function createShareCheckbox(item, setting, labelText, checked) {
+  const label = document.createElement("label");
+  label.className = "share-option-control";
+
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = checked;
+  input.dataset.eventId = item.id;
+  input.dataset.setting = setting;
+
+  label.append(input, document.createTextNode(labelText));
+  return label;
 }
 
 function getShareBaseUrl() {

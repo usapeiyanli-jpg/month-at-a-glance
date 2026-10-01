@@ -42,7 +42,13 @@
           </label>
         </div>
         <button class="primary-action" type="submit">Add to calendar</button>
-        <button id="shareButton" class="secondary-action" type="button">Share calendar</button>
+        <button id="shareButton" class="secondary-action" type="button">Choose what to share</button>
+        <section id="shareOptions" class="share-options" hidden aria-labelledby="shareOptionsTitle">
+          <h3 id="shareOptionsTitle">Sharing privacy</h3>
+          <p>Uncheck private events or disguise them as “Busy” before creating the link.</p>
+          <div id="shareOptionsList"></div>
+          <button id="createShareButton" class="primary-action" type="button">Create share link</button>
+        </section>
         <label class="share-output">
           Share URL
           <input id="shareUrl" type="url" readonly placeholder="Add something, then share it">
